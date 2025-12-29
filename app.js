@@ -12,10 +12,8 @@ let allLocations = [];
 function norm(v) {
   return String(v || "").toLowerCase().trim();
 }
-
-// Obtiene ubicaciones del almacén seleccionado
-async function fetchLocations(almacen) {
-  const res = await fetch(`${API_URL}?action=locations&almacen=${almacen}`);
+async function fetchLocations() {
+  const res = await fetch(`${API_URL}?action=locations`);
   const json = await res.json();
   if (!json.ok) throw new Error(json.error || "Error al cargar datos");
   return json.data;
@@ -79,7 +77,8 @@ async function load() {
   try {
     detailsEl.innerHTML = "<p>Cargando...</p>";
     const almacen = almacenSelect.value;
-    const data = await fetchLocations(almacen);
+    const all = await fetchLocations();
+    const data = all.filter(r => r.ALMACEN === almacen);
     allLocations = data;
 
     const filtered = applySearch(allLocations, searchInput.value);
