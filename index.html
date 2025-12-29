@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Almacén virtual</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <h1>Almacén virtual</h1>
+
+    <div class="controls">
+      <label>
+        Almacén:
+        <select id="almacenSelect">
+          <option value="ALM1">ALM1</option>
+          <option value="ALM2">ALM2</option>
+        </select>
+      </label>
+
+      <label>
+        Buscar:
+        <input id="searchInput" type="search" placeholder="Producto, lote o código..." />
+      </label>
+
+      <button id="refreshBtn">Actualizar</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section>
+      <div id="grid" class="grid"></div>
+    </section>
+
+    <aside class="panel">
+      <h2>Hueco</h2>
+      <div id="details">
+        <p>Haz click en un hueco.</p>
+      </div>
+    </aside>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
