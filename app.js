@@ -1,142 +1,105 @@
 const API_URL = "https://script.google.com/macros/s/AKfycbxwTBIwv4dpN5_Y3vy8G9RLR8NXMRnmnqFRdTPsGYP6h3d2k08BD_gbkgfNQyjpJGtQ/exec";
 
-const gridEl = document.getElementById("grid");
-const detailsEl = document.getElementById("details");
+const grid = document.getElementById("grid");
+const details = document.getElementById("details");
 const almacenSelect = document.getElementById("almacenSelect");
 const searchInput = document.getElementById("searchInput");
 const refreshBtn = document.getElementById("refreshBtn");
 
-let allLocations = [];
+function norm(v) { return String(v ?? "").toLowerCase().trim(); }
 
-function norm(v) {
-  return String(v ?? "").toLowerCase().trim();
-}
+function jsonp(url) {
+  return new Promise((resolve, reject) => {
+    const cb = "cb_" + Math.random().toString(36).slice(2);
+    const script = document.createElement("script");
 
-function pick(row, candidates) {
-  for (const k of candidates) {
-    if (row && row[k] !== undefined && row[k] !== null) return row[k];
-  }
-  return "";
-}
-
-function getRowFields(row) {
-  return {
-    almacen: pick(row, ["ALMACEN", "almacen"]),
-    fila: pick(row, ["FILA", "fila"]),
-    columna: pick(row, ["COLUMNA", "columna"]),
-    code: pick(row, ["UBICACIÓN_CÓDIGO", "UBICACION_CODIGO", "ubicacion_codigo"]),
-    producto: pick(row, ["PRODUCTO", "producto"]),
-    cantidad: pick(row, ["CANTIDAD", "cantidad"]),
-    unidad: pick(row, ["UNIDAD", "unidad"]),
-    lote: pick(row, ["LOTE", "lote"]),
-    estado: pick(row, ["ESTADO", "estado"]),
-    obs: pick(row, ["OBSERVACIONES", "observaciones"]),
-  };
-}
-
-async function fetchAllLocations() {
-  const url = `${API_URL}?action=locations`;
-  const res = await fetch(url);
-  const json = await res.json();
-  if (!json.ok) throw new Error(json.error || "Error al cargar datos");
-  return json.data || [];
-}
-
-function renderGrid(rows) {
-  gridEl.innerHTML = "";
-
-  // si no hay nada, lo mostramos en el panel
-  if (!rows.length) {
-    detailsEl.innerHTML = `<p style="color:#b00"><strong>No hay datos</strong> para este almacén.</p>`;
-    return;
-  }
-
-  const order = { A: 1, B: 2, C: 3, D: 4 };
-
-  const mapped = rows.map(r => {
-    const f = getRowFields(r);
-    return {
-      raw: r,
-      ...f,
-      filaKey: String(f.fila).trim().toUpperCase(),
-      colNum: Number(String(f.columna).trim()) || 0,
-      estadoKey: norm(f.estado) || "vacio",
-      cantNum: Number(String(f.cantidad).replace(",", ".").trim()) || 0,
+    window[cb] = (data) => {
+      delete window[cb];
+      script.remove();
+      resolve(data);
     };
+
+    script.onerror = () => {
+      delete window[cb];
+      script.remove();
+      reject(new Error("No se pudo cargar Apps Script (JSONP)."));
+    };
+
+    script.src = url + (url.includes("?") ? "&" : "?") + "callback=" + cb;
+    document.body.appendChild(script);
+  });
+}
+
+function render(rows) {
+  grid.innerHTML = "";
+  const order = { A: 0, B: 1, C: 2, D: 3 };
+
+  rows.sort((a, b) => {
+    const fa = String(a.FILA || "").toUpperCase();
+    const fb = String(b.FILA || "").toUpperCase();
+    const ca = Number(a.COLUMNA) || 0;
+    const cb = Number(b.COLUMNA) || 0;
+    return (order[fa] ?? 99) - (order[fb] ?? 99) || ca - cb;
   });
 
-  mapped.sort((a, b) => {
-    const ra = order[a.filaKey] ?? 99;
-    const rb = order[b.filaKey] ?? 99;
-    if (ra !== rb) return ra - rb;
-    return a.colNum - b.colNum;
-  });
+  rows.forEach(r => {
+    const code = r["UBICACIÓN_CÓDIGO"] || r["UBICACION_CODIGO"] || "SIN_CODIGO";
+    const prod = r.PRODUCTO || "—";
+    const cant = r.CANTIDAD || 0;
+    const uni = r.UNIDAD || "";
 
-  for (const item of mapped) {
     const cell = document.createElement("div");
-    cell.className = `cell ${item.estadoKey}`;
-    cell.innerHTML = `
-      <div class="code">${item.code || "SIN_CODIGO"}</div>
-      <div class="meta">${item.producto ? item.producto : "—"} · ${item.cantNum} ${item.unidad || ""}</div>
-    `;
-    cell.addEventListener("click", () => showDetails(item));
-    gridEl.appendChild(cell);
-  }
-}
+    cell.className = "cell";
+    cell.innerHTML = `<div class="code">${code}</div><div class="meta">${prod} · ${cant} ${uni}</div>`;
 
-function showDetails(item) {
-  detailsEl.innerHTML = `
-    <p><strong>Código:</strong> ${item.code || "—"}</p>
-    <p><strong>Producto:</strong> ${item.producto || "—"}</p>
-    <p><strong>Cantidad:</strong> ${item.cantNum} ${item.unidad || ""}</p>
-    <p><strong>Lote:</strong> ${item.lote || "—"}</p>
-    <p><strong>Estado:</strong> <span class="badge">${item.estado || "VACIO"}</span></p>
-    <p><strong>Observaciones:</strong> ${item.obs || "—"}</p>
-  `;
-}
+    cell.onclick = () => {
+      details.innerHTML = `
+        <p><strong>Código:</strong> ${code}</p>
+        <p><strong>Producto:</strong> ${prod}</p>
+        <p><strong>Cantidad:</strong> ${cant} ${uni}</p>
+        <p><strong>Lote:</strong> ${r.LOTE || "—"}</p>
+        <p><strong>Estado:</strong> ${r.ESTADO || "VACIO"}</p>
+        <p><strong>Observaciones:</strong> ${r.OBSERVACIONES || "—"}</p>
+      `;
+    };
 
-function applySearch(rows, text) {
-  const q = norm(text);
-  if (!q) return rows;
-  return rows.filter(r => {
-    const f = getRowFields(r);
-    return (
-      norm(f.almacen).includes(q) ||
-      norm(f.fila).includes(q) ||
-      norm(f.columna).includes(q) ||
-      norm(f.code).includes(q) ||
-      norm(f.producto).includes(q) ||
-      norm(f.lote).includes(q)
-    );
+    grid.appendChild(cell);
   });
 }
 
 async function load() {
   try {
-    detailsEl.innerHTML = "<p>Cargando...</p>";
+    details.innerHTML = "<p>Cargando...</p>";
+    grid.innerHTML = "";
 
-    // 1) cargar todo (solo la primera vez o si refrescas)
-    allLocations = await fetchAllLocations();
-
-    // 2) filtrar por almacen en frontend
     const almacen = almacenSelect.value;
-    let rows = allLocations.filter(r => String(pick(r, ["ALMACEN", "almacen"])).trim() === almacen);
+    const q = norm(searchInput.value);
 
-    // 3) aplicar búsqueda
-    rows = applySearch(rows, searchInput.value);
+    // Pedimos al backend ya filtrado (y si no filtra, igual funcionaría)
+    const res = await jsonp(`${API_URL}?action=locations&almacen=${encodeURIComponent(almacen)}`);
 
-    // 4) pintar
-    renderGrid(rows);
+    if (!res.ok) throw new Error(res.error || "Error");
 
-    // si hay datos, deja el panel listo
-    if (rows.length) detailsEl.innerHTML = "<p>Haz click en un hueco.</p>";
+    let rows = res.data || [];
+
+    if (q) {
+      rows = rows.filter(r => {
+        const code = norm(r["UBICACIÓN_CÓDIGO"] || r["UBICACION_CODIGO"]);
+        const prod = norm(r.PRODUCTO);
+        const lote = norm(r.LOTE);
+        return code.includes(q) || prod.includes(q) || lote.includes(q);
+      });
+    }
+
+    render(rows);
+    details.innerHTML = "<p>Haz click en un hueco.</p>";
   } catch (err) {
-    detailsEl.innerHTML = `<p style="color:#b00"><strong>Error:</strong> ${err.message}</p>`;
+    details.innerHTML = `<p style="color:#b00"><strong>Error:</strong> ${err.message}</p>`;
   }
 }
 
-almacenSelect.addEventListener("change", load);
-searchInput.addEventListener("input", load);
-refreshBtn.addEventListener("click", load);
+almacenSelect.onchange = load;
+searchInput.oninput = load;
+refreshBtn.onclick = load;
 
 load();
