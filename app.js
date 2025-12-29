@@ -8,92 +8,135 @@ const refreshBtn = document.getElementById("refreshBtn");
 
 let allLocations = [];
 
-// Normaliza texto
 function norm(v) {
-  return String(v || "").toLowerCase().trim();
-}
-async function fetchLocations() {
-  const res = await fetch(`${API_URL}?action=locations`);
-  const json = await res.json();
-  if (!json.ok) throw new Error(json.error || "Error al cargar datos");
-  return json.data;
+  return String(v ?? "").toLowerCase().trim();
 }
 
-// Dibuja la cuadrícula 4x4
+function pick(row, candidates) {
+  for (const k of candidates) {
+    if (row && row[k] !== undefined && row[k] !== null) return row[k];
+  }
+  return "";
+}
+
+function getRowFields(row) {
+  return {
+    almacen: pick(row, ["ALMACEN", "almacen"]),
+    fila: pick(row, ["FILA", "fila"]),
+    columna: pick(row, ["COLUMNA", "columna"]),
+    code: pick(row, ["UBICACIÓN_CÓDIGO", "UBICACION_CODIGO", "ubicacion_codigo"]),
+    producto: pick(row, ["PRODUCTO", "producto"]),
+    cantidad: pick(row, ["CANTIDAD", "cantidad"]),
+    unidad: pick(row, ["UNIDAD", "unidad"]),
+    lote: pick(row, ["LOTE", "lote"]),
+    estado: pick(row, ["ESTADO", "estado"]),
+    obs: pick(row, ["OBSERVACIONES", "observaciones"]),
+  };
+}
+
+async function fetchAllLocations() {
+  const url = `${API_URL}?action=locations`;
+  const res = await fetch(url);
+  const json = await res.json();
+  if (!json.ok) throw new Error(json.error || "Error al cargar datos");
+  return json.data || [];
+}
+
 function renderGrid(rows) {
   gridEl.innerHTML = "";
 
-  // Ordenar por fila A-D y columna 1-4
+  // si no hay nada, lo mostramos en el panel
+  if (!rows.length) {
+    detailsEl.innerHTML = `<p style="color:#b00"><strong>No hay datos</strong> para este almacén.</p>`;
+    return;
+  }
+
   const order = { A: 1, B: 2, C: 3, D: 4 };
 
-  rows
-    .sort((a, b) => {
-      if (order[a.FILA] !== order[b.FILA]) {
-        return order[a.FILA] - order[b.FILA];
-      }
-      return a.COLUMNA - b.COLUMNA;
-    })
-    .forEach(row => {
-      const cell = document.createElement("div");
-      const estado = norm(row.ESTADO) || "vacio";
+  const mapped = rows.map(r => {
+    const f = getRowFields(r);
+    return {
+      raw: r,
+      ...f,
+      filaKey: String(f.fila).trim().toUpperCase(),
+      colNum: Number(String(f.columna).trim()) || 0,
+      estadoKey: norm(f.estado) || "vacio",
+      cantNum: Number(String(f.cantidad).replace(",", ".").trim()) || 0,
+    };
+  });
 
-      cell.className = `cell ${estado}`;
-      cell.innerHTML = `
-        <div class="code">${row["UBICACIÓN_CÓDIGO"]}</div>
-        <div class="meta">
-          ${row.PRODUCTO || "—"} · ${row.CANTIDAD || 0} ${row.UNIDAD || ""}
-        </div>
-      `;
+  mapped.sort((a, b) => {
+    const ra = order[a.filaKey] ?? 99;
+    const rb = order[b.filaKey] ?? 99;
+    if (ra !== rb) return ra - rb;
+    return a.colNum - b.colNum;
+  });
 
-      cell.addEventListener("click", () => showDetails(row));
-      gridEl.appendChild(cell);
-    });
-}
-
-// Muestra detalles del hueco
-function showDetails(row) {
-  detailsEl.innerHTML = `
-    <p><strong>Código:</strong> ${row["UBICACIÓN_CÓDIGO"]}</p>
-    <p><strong>Producto:</strong> ${row.PRODUCTO || "—"}</p>
-    <p><strong>Cantidad:</strong> ${row.CANTIDAD || 0} ${row.UNIDAD || ""}</p>
-    <p><strong>Lote:</strong> ${row.LOTE || "—"}</p>
-    <p><strong>Estado:</strong> <span class="badge">${row.ESTADO}</span></p>
-    <p><strong>Observaciones:</strong> ${row.OBSERVACIONES || "—"}</p>
-  `;
-}
-
-// Filtra por buscador
-function applySearch(rows, text) {
-  if (!text) return rows;
-  return rows.filter(r =>
-    norm(r["UBICACIÓN_CÓDIGO"]).includes(norm(text)) ||
-    norm(r.PRODUCTO).includes(norm(text)) ||
-    norm(r.LOTE).includes(norm(text))
-  );
-}
-
-// Carga general
-async function load() {
-  try {
-    detailsEl.innerHTML = "<p>Cargando...</p>";
-    const almacen = almacenSelect.value;
-    const all = await fetchLocations();
-    const data = all.filter(r => r.ALMACEN === almacen);
-    allLocations = data;
-
-    const filtered = applySearch(allLocations, searchInput.value);
-    renderGrid(filtered);
-
-    detailsEl.innerHTML = "<p>Haz click en un hueco.</p>";
-  } catch (err) {
-    detailsEl.innerHTML = `<p style="color:red">${err.message}</p>`;
+  for (const item of mapped) {
+    const cell = document.createElement("div");
+    cell.className = `cell ${item.estadoKey}`;
+    cell.innerHTML = `
+      <div class="code">${item.code || "SIN_CODIGO"}</div>
+      <div class="meta">${item.producto ? item.producto : "—"} · ${item.cantNum} ${item.unidad || ""}</div>
+    `;
+    cell.addEventListener("click", () => showDetails(item));
+    gridEl.appendChild(cell);
   }
 }
 
-// Eventos
+function showDetails(item) {
+  detailsEl.innerHTML = `
+    <p><strong>Código:</strong> ${item.code || "—"}</p>
+    <p><strong>Producto:</strong> ${item.producto || "—"}</p>
+    <p><strong>Cantidad:</strong> ${item.cantNum} ${item.unidad || ""}</p>
+    <p><strong>Lote:</strong> ${item.lote || "—"}</p>
+    <p><strong>Estado:</strong> <span class="badge">${item.estado || "VACIO"}</span></p>
+    <p><strong>Observaciones:</strong> ${item.obs || "—"}</p>
+  `;
+}
+
+function applySearch(rows, text) {
+  const q = norm(text);
+  if (!q) return rows;
+  return rows.filter(r => {
+    const f = getRowFields(r);
+    return (
+      norm(f.almacen).includes(q) ||
+      norm(f.fila).includes(q) ||
+      norm(f.columna).includes(q) ||
+      norm(f.code).includes(q) ||
+      norm(f.producto).includes(q) ||
+      norm(f.lote).includes(q)
+    );
+  });
+}
+
+async function load() {
+  try {
+    detailsEl.innerHTML = "<p>Cargando...</p>";
+
+    // 1) cargar todo (solo la primera vez o si refrescas)
+    allLocations = await fetchAllLocations();
+
+    // 2) filtrar por almacen en frontend
+    const almacen = almacenSelect.value;
+    let rows = allLocations.filter(r => String(pick(r, ["ALMACEN", "almacen"])).trim() === almacen);
+
+    // 3) aplicar búsqueda
+    rows = applySearch(rows, searchInput.value);
+
+    // 4) pintar
+    renderGrid(rows);
+
+    // si hay datos, deja el panel listo
+    if (rows.length) detailsEl.innerHTML = "<p>Haz click en un hueco.</p>";
+  } catch (err) {
+    detailsEl.innerHTML = `<p style="color:#b00"><strong>Error:</strong> ${err.message}</p>`;
+  }
+}
+
 almacenSelect.addEventListener("change", load);
 searchInput.addEventListener("input", load);
 refreshBtn.addEventListener("click", load);
 
-// Arranque inicial
 load();
