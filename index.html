@@ -4,43 +4,73 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Almacén virtual</title>
-  <link rel="stylesheet" href="style.css" />
+
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    h1 { margin: 0 0 10px 0; }
+
+    .topbar { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .topbar label { display: inline-flex; gap: 6px; align-items: center; }
+
+    hr { margin: 12px 0 16px 0; }
+
+    .main {
+      display: grid;
+      grid-template-columns: 1fr 360px;
+      gap: 18px;
+      align-items: start;
+    }
+
+    /* IMPORTANTE: esto fuerza a que el grid se vea sí o sí */
+    #grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(160px, 1fr));
+      gap: 14px;
+      min-height: 260px;
+    }
+
+    .cell {
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      padding: 14px;
+      background: #f7f7f7;
+      cursor: pointer;
+      user-select: none;
+    }
+    .cell:hover { background: #efefef; }
+    .cell .code { font-weight: 700; font-size: 18px; margin-bottom: 10px; }
+    .cell .meta { font-size: 14px; opacity: 0.9; }
+
+    #details {
+      border: 1px solid #ddd;
+      padding: 16px;
+      min-height: 220px;
+      background: #fff;
+    }
+  </style>
 </head>
+
 <body>
-  <header class="topbar">
-    <h1>Almacén virtual</h1>
+  <h1>Almacén virtual</h1>
 
-    <div class="controls">
-      <label>
-        Almacén:
-        <select id="almacenSelect">
-          <option value="ALM1">ALM1</option>
-          <option value="ALM2">ALM2</option>
-        </select>
-      </label>
+  <div class="topbar">
+    <label>Almacén:
+      <select id="almacenSelect">
+        <option value="ALM1">ALM1</option>
+        <option value="ALM2">ALM2</option>
+      </select>
+    </label>
 
-      <label>
-        Buscar:
-        <input id="searchInput" type="search" placeholder="Producto, lote o código..." />
-      </label>
+    <label>Buscar:
+      <input id="searchInput" type="text" placeholder="Producto, lote o código..." />
+    </label>
 
-      <button id="refreshBtn">Actualizar</button>
-    </div>
-  </header>
+    <button id="refreshBtn">Actualizar</button>
+  </div>
 
-  <main class="layout">
-    <section>
-      <div id="grid" class="grid"></div>
-    </section>
+  <hr />
 
-    <aside class="panel">
-      <h2>Hueco</h2>
-      <div id="details">
-        <p>Haz click en un hueco.</p>
-      </div>
-    </aside>
-  </main>
+  <div class="main">
+    <div id="grid"></div>
 
-  <script src="app.js"></script>
-</body>
-</html>
+    <div id="details">
