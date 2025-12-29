@@ -1,68 +1,35 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8" />
   <title>Almacén virtual</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    h1 { margin: 0 0 10px 0; }
-    .topbar { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
-    .topbar label { display:inline-flex; gap:6px; align-items:center; }
-    hr { margin: 12px 0 16px 0; }
-    .main { display:grid; grid-template-columns: 1fr 360px; gap:18px; align-items:start; }
-    #grid { display:grid; grid-template-columns: repeat(4, minmax(160px, 1fr)); gap:14px; min-height:260px; }
-    .cell { border:1px solid #ddd; border-radius:12px; padding:14px; background:#f7f7f7; cursor:pointer; }
-    .cell:hover { background:#efefef; }
-    .code { font-weight:700; font-size:18px; margin-bottom:10px; }
-    .meta { font-size:14px; opacity:0.9; }
-    #details { border:1px solid #ddd; padding:16px; min-height:220px; background:#fff; }
-    .small { font-size: 12px; opacity: .8; }
-  </style>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h1>Almacén virtual</h1>
 
-  <div class="topbar">
-    <label>Vista:
-      <select id="modeSelect">
-        <option value="today">HOY (estado actual)</option>
-        <option value="history">Histórico (por fecha)</option>
-      </select>
-    </label>
+<h1>Almacén virtual</h1>
 
-    <label>Fecha:
-      <select id="dateSelect" disabled>
-        <option value="">Selecciona una fecha...</option>
-      </select>
-    </label>
+<div class="topbar">
+  <label>Almacén:</label>
+  <select id="almacenSelect">
+    <option value="ALM1">ALM1</option>
+    <option value="ALM2">ALM2</option>
+  </select>
 
-    <label>Almacén:
-      <select id="almacenSelect">
-        <option value="ALM1">ALM1</option>
-        <option value="ALM2">ALM2</option>
-      </select>
-    </label>
+  <input id="searchInput" placeholder="Producto, lote o código..." />
+  <button id="refreshBtn">Actualizar</button>
+</div>
 
-    <label>Buscar:
-      <input id="searchInput" type="text" placeholder="Producto, lote o código..." />
-    </label>
+<div class="container">
+  <div id="grid" class="grid"></div>
 
-    <button id="refreshBtn">Actualizar</button>
-    <span class="small" id="status"></span>
+  <div id="details" class="details">
+    <h2>Hueco</h2>
+    <p>Haz click en un hueco.</p>
+    <div id="status"></div>
   </div>
+</div>
 
-  <hr />
-
-  <div class="main">
-    <div id="grid"></div>
-
-    <div id="details">
-      <h2>Hueco</h2>
-      <p>Haz click en un hueco.</p>
-    </div>
-  </div>
-
-  <script src="app.js?v=1"></script>
+<script src="app.js"></script>
 </body>
 </html>
