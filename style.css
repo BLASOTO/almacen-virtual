@@ -4,58 +4,48 @@ body {
 }
 
 .topbar {
+  margin-bottom: 15px;
+}
+
+.container {
   display: flex;
+  gap: 30px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, 140px);
   gap: 12px;
-  align-items: center;
-  flex-wrap: wrap;
-  margin-bottom: 12px;
-}
-
-hr {
-  margin: 12px 0 16px 0;
-}
-
-.main {
-  display: grid;
-  grid-template-columns: 1fr 360px;
-  gap: 18px;
-  align-items: start;
-}
-
-#grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(160px, 1fr));
-  gap: 14px;
-  min-height: 200px;
 }
 
 .cell {
-  border: 1px solid #ddd;
-  border-radius: 12px;
-  padding: 14px;
-  background: #f7f7f7;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  padding: 10px;
   cursor: pointer;
-  user-select: none;
+  background: #f6f6f6;
 }
 
 .cell:hover {
-  background: #efefef;
+  background: #eaeaea;
 }
 
-.cell .code {
-  font-weight: 700;
-  font-size: 18px;
-  margin-bottom: 10px;
+.details {
+  min-width: 300px;
+  border: 1px solid #ccc;
+  padding: 15px;
+  border-radius: 10px;
 }
 
-.cell .meta {
-  font-size: 14px;
-  opacity: 0.9;
+.ok {
+  color: green;
+  font-weight: bold;
 }
 
-#details {
-  border: 1px solid #ddd;
-  padding: 16px;
+.vacio {
+  color: gray;
+}
+
   min-height: 200px;
   background: #fff;
 }
