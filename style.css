@@ -1,0 +1,94 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  background: #fafafa;
+}
+
+.topbar {
+  padding: 16px;
+  border-bottom: 1px solid #ddd;
+  background: #fff;
+}
+
+.topbar h1 {
+  margin: 0 0 10px 0;
+  font-size: 20px;
+}
+
+.controls {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.controls label {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 16px;
+  padding: 16px;
+}
+
+@media (max-width: 900px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  max-width: 520px;
+}
+
+.cell {
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 12px;
+  cursor: pointer;
+  min-height: 72px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: #fff;
+}
+
+.cell .code {
+  font-weight: bold;
+}
+
+.cell .meta {
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.cell.vacio {
+  background: #f0f0f0;
+}
+
+.cell.ok {
+  background: #e6f7ee;
+}
+
+.cell.bloqueado {
+  background: #fdecea;
+}
+
+.cell.revision {
+  background: #fff4e5;
+}
+
+.panel {
+  border: 1px solid #ddd;
+  b
